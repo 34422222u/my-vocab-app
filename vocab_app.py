@@ -25,7 +25,6 @@ if "current_word" not in st.session_state:
 if "show_answer" not in st.session_state:
     st.session_state.show_answer = False
 
-# 編集中の単語を管理する状態
 if "editing_word" not in st.session_state:
     st.session_state.editing_word = None
 
@@ -41,7 +40,7 @@ def next_question():
     st.session_state.show_answer = False
 
 st.set_page_config(page_title="マイ英単語帳", page_icon="📝", layout="centered")
-st.title("📝 自分専用の英単語帳")
+st.title("📝 自分専用 of 英単語帳")
 
 tab1, tab2, tab3 = st.tabs(["🎯 クイズ", "➕ 単語を追加", "📚 単語一覧・復習"])
 
@@ -111,9 +110,52 @@ with tab3:
     if not st.session_state.words:
         st.caption("登録されている単語はありません。")
     else:
-        # 編集モードの入力エリアを最上部に表示
         if st.session_state.editing_word:
             st.markdown("---")
             st.markdown(f"✏️ **「{st.session_state.editing_word}」を編集しています**")
             edit_w = st.text_input("英単語", value=st.session_state.editing_word)
-            edit_m = st.text
+            edit_m = st.text_input("意味", value=st.session_state.words[st.session_state.editing_word])
+            
+            btn_col1, btn_col2 = st.columns(2)
+            with btn_col1:
+                if st.button("💾 変更を保存する", type="primary"):
+                    if edit_w and edit_m:
+                        if edit_w != st.session_state.editing_word:
+                            del st.session_state.words[st.session_state.editing_word]
+                            if st.session_state.editing_word in st.session_state.wrong_words:
+                                st.session_state.wrong_words.remove(st.session_state.editing_word)
+                                st.session_state.wrong_words.add(edit_w)
+                        
+                        st.session_state.words[edit_w] = edit_m
+                        save_data()
+                        st.session_state.editing_word = None
+                        next_question()
+                        st.rerun()
+            with btn_col2:
+                if st.button("❌ キャンセル"):
+                    st.session_state.editing_word = None
+                    st.rerun()
+            st.markdown("---")
+
+        # 崩れ対策：左右にシンプルに2分割するデザインに変更
+        for w, m in list(st.session_state.words.items()):
+            col_text, col_btn = st.columns([4, 2])
+            with col_text:
+                st.write(f"**{w}** : {m}")
+            with col_btn:
+                # ボタン同士を横並びにする
+                sub_col1, sub_col2 = st.columns(2)
+                with sub_col1:
+                    if st.button("✏️", key=f"edit_btn_{w}"):
+                        st.session_state.editing_word = w
+                        st.rerun()
+                with sub_col2:
+                    if st.button("🗑️", key=f"delete_{w}"):
+                        del st.session_state.words[w]
+                        if w in st.session_state.wrong_words:
+                            st.session_state.wrong_words.remove(w)
+                        if st.session_state.editing_word == w:
+                            st.session_state.editing_word = None
+                        save_data()
+                        next_question()
+                        st.rerun()
