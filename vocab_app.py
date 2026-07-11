@@ -25,6 +25,10 @@ if "current_word" not in st.session_state:
 if "show_answer" not in st.session_state:
     st.session_state.show_answer = False
 
+# 編集中の単語を管理する状態
+if "editing_word" not in st.session_state:
+    st.session_state.editing_word = None
+
 def save_data():
     with open(DATA_FILE, "w", encoding="utf-8") as f:
         json.dump(st.session_state.words, f, ensure_ascii=False, indent=4)
@@ -46,7 +50,6 @@ with tab1:
     if not st.session_state.words:
         st.warning("単語帳が空っぽです。「単語を追加」タブから登録してください。")
     else:
-        # 出題モードの選択肢を追加
         mode = st.radio("出題モード", ["英語 ➔ 日本語", "日本語 ➔ 英語"], horizontal=True)
         
         q_word = st.session_state.current_word
@@ -54,7 +57,6 @@ with tab1:
             next_question()
             st.rerun()
             
-        # モードによって問題と答えを入れ替える
         if mode == "英語 ➔ 日本語":
             question_text = q_word
             answer_text = st.session_state.words[q_word]
@@ -109,17 +111,9 @@ with tab3:
     if not st.session_state.words:
         st.caption("登録されている単語はありません。")
     else:
-        for w, m in list(st.session_state.words.items()):
-            col1, col2, col3 = st.columns([3, 3, 1])
-            with col1:
-                st.write(f"**{w}**")
-            with col2:
-                st.write(m)
-            with col3:
-                if st.button("削除", key=f"delete_{w}"):
-                    del st.session_state.words[w]
-                    if w in st.session_state.wrong_words:
-                        st.session_state.wrong_words.remove(w)
-                    save_data()
-                    next_question()
-                    st.rerun()
+        # 編集モードの入力エリアを最上部に表示
+        if st.session_state.editing_word:
+            st.markdown("---")
+            st.markdown(f"✏️ **「{st.session_state.editing_word}」を編集しています**")
+            edit_w = st.text_input("英単語", value=st.session_state.editing_word)
+            edit_m = st.text
