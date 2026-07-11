@@ -110,58 +110,67 @@ with tab3:
     if not st.session_state.words:
         st.caption("登録されている単語はありません。")
     else:
-        # ループの中で、各単語のすぐ下に編集エリアを出すように変更
-        for w, m in list(st.session_state.words.items()):
-            col_text, col_btn = st.columns([5, 1])
-            with col_text:
-                if w == st.session_state.editing_word:
-                    st.write(f"👉 **{w}** : {m}")
-                else:
-                    st.write(f"**{w}** : {m}")
-            with col_btn:
-                sub_col_edit, sub_col_del = st.columns(2)
-                with sub_col_edit:
-                    if st.button("✏️", key=f"edit_btn_{w}"):
-                        st.session_state.editing_word = w
-                        st.rerun()
-                with sub_col_del:
-                    if st.button("🗑️", key=f"delete_{w}"):
-                        if w in st.session_state.words:
-                            del st.session_state.words[w]
-                        if w in st.session_state.wrong_words:
-                            st.session_state.wrong_words.remove(w)
-                        if st.session_state.editing_word == w:
-                            st.session_state.editing_word = None
-                        save_data()
-                        next_question()
-                        st.rerun()
-            
-            # 【ここが新しい仕組み！】
-            # 鉛筆が押された単語のすぐ下に、インラインで入力欄を展開する
-            if w == st.session_state.editing_word:
-                with st.container():
-                    st.caption("👇 この単語を編集中です。内容を書き換えて「保存」を押してください。")
-                    edit_w = st.text_input("英単語を修正", value=st.session_state.editing_word, key=f"input_w_{w}")
-                    edit_m = st.text_input("意味を修正", value=st.session_state.words[st.session_state.editing_word], key=f"input_m_{w}")
-                    
-                    btn_col1, btn_col2 = st.columns(2)
-                    with btn_col1:
-                        if st.button("💾 変更を保存", type="primary", key=f"save_btn_{w}"):
-                            if edit_w and edit_m:
-                                if edit_w != st.session_state.editing_word:
-                                    if st.session_state.editing_word in st.session_state.words:
-                                        del st.session_state.words[st.session_state.editing_word]
-                                    if st.session_state.editing_word in st.session_state.wrong_words:
-                                        st.session_state.wrong_words.remove(st.session_state.editing_word)
-                                        st.session_state.wrong_words.add(edit_w)
-                                
-                                st.session_state.words[edit_w] = edit_m
-                                save_data()
-                                st.session_state.editing_word = None
-                                next_question()
-                                st.rerun()
-                    with btn_col2:
-                        if st.button("❌ 中止", key=f"cancel_btn_{w}"):
-                            st.session_state.editing_word = None
+        # 【ここが新しい仕組み！】検索キーワードの入力欄
+        search_query = st.text_input("🔍 単語を検索（英単語・意味のどちらでもOK）", value="")
+
+        # 検索文字がある場合は絞り込み、ない場合は全件表示する
+        filtered_words = {}
+        for w, m in st.session_state.words.items():
+            if search_query.lower() in w.lower() or search_query in m:
+                filtered_words[w] = m
+
+        if not filtered_words:
+            st.caption("🔍 一致する単語が見つかりませんでした。")
+        else:
+            for w, m in list(filtered_words.items()):
+                col_text, col_btn = st.columns([5, 1])
+                with col_text:
+                    if w == st.session_state.editing_word:
+                        st.write(f"👉 **{w}** : {m}")
+                    else:
+                        st.write(f"**{w}** : {m}")
+                with col_btn:
+                    sub_col_edit, sub_col_del = st.columns(2)
+                    with sub_col_edit:
+                        if st.button("✏️", key=f"edit_btn_{w}"):
+                            st.session_state.editing_word = w
                             st.rerun()
-                st.markdown("---")
+                    with sub_col_del:
+                        if st.button("🗑️", key=f"delete_{w}"):
+                            if w in st.session_state.words:
+                                del st.session_state.words[w]
+                            if w in st.session_state.wrong_words:
+                                st.session_state.wrong_words.remove(w)
+                            if st.session_state.editing_word == w:
+                                st.session_state.editing_word = None
+                            save_data()
+                            next_question()
+                            st.rerun()
+                
+                if w == st.session_state.editing_word:
+                    with st.container():
+                        st.caption("👇 この単語を編集中です。内容を書き換えて「保存」を押してください。")
+                        edit_w = st.text_input("英単語を修正", value=st.session_state.editing_word, key=f"input_w_{w}")
+                        edit_m = st.text_input("意味を修正", value=st.session_state.words[st.session_state.editing_word], key=f"input_m_{w}")
+                        
+                        btn_col1, btn_col2 = st.columns(2)
+                        with btn_col1:
+                            if st.button("💾 変更を保存", type="primary", key=f"save_btn_{w}"):
+                                if edit_w and edit_m:
+                                    if edit_w != st.session_state.editing_word:
+                                        if st.session_state.editing_word in st.session_state.words:
+                                            del st.session_state.words[st.session_state.editing_word]
+                                        if st.session_state.editing_word in st.session_state.wrong_words:
+                                            st.session_state.wrong_words.remove(st.session_state.editing_word)
+                                            st.session_state.wrong_words.add(edit_w)
+                                    
+                                    st.session_state.words[edit_w] = edit_m
+                                    save_data()
+                                    st.session_state.editing_word = None
+                                    next_question()
+                                    st.rerun()
+                        with btn_col2:
+                            if st.button("❌ 中止", key=f"cancel_btn_{w}"):
+                                st.session_state.editing_word = None
+                                st.rerun()
+                    st.markdown("---")
