@@ -46,18 +46,29 @@ with tab1:
     if not st.session_state.words:
         st.warning("単語帳が空っぽです。「単語を追加」タブから登録してください。")
     else:
+        # 出題モードの選択肢を追加
+        mode = st.radio("出題モード", ["英語 ➔ 日本語", "日本語 ➔ 英語"], horizontal=True)
+        
         q_word = st.session_state.current_word
         if q_word not in st.session_state.words:
             next_question()
             st.rerun()
             
-        st.info(f"この単語の意味は？\n\n### **{q_word}**")
+        # モードによって問題と答えを入れ替える
+        if mode == "英語 ➔ 日本語":
+            question_text = q_word
+            answer_text = st.session_state.words[q_word]
+        else:
+            question_text = st.session_state.words[q_word]
+            answer_text = q_word
+            
+        st.info(f"問題:\n\n### **{question_text}**")
         
         if st.button("答えを表示する", type="primary"):
             st.session_state.show_answer = True
             
         if st.session_state.show_answer:
-            st.success(f"【答え】 {st.session_state.words[q_word]}")
+            st.success(f"【答え】 {answer_text}")
             
             col1, col2 = st.columns(2)
             with col1:
