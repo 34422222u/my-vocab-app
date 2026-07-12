@@ -3,12 +3,22 @@ import random
 import json
 import os
 
-DATA_FILE = "my_words_web.json"
+# データの保存場所を「絶対にズレない場所（カレントディレクトリ）」に固定
+DATA_FILE = os.path.join(os.path.dirname(__file__), "my_words_web.json") if "__file__" in locals() else "my_words_web.json"
+# 以前のズレた場所に残っている可能性がある古いファイル名
+OLD_DATA_FILE = "my_words_web.json"
 
 if "words" not in st.session_state:
+    # 🌟【データ救出システム】🌟
+    # 1. まず現在の固定場所にあるか確認
     if os.path.exists(DATA_FILE):
         with open(DATA_FILE, "r", encoding="utf-8") as f:
             st.session_state.words = json.load(f)
+    # 2. もし無ければ、以前の古い場所からデータを救出して合流させる
+    elif os.path.exists(OLD_DATA_FILE):
+        with open(OLD_DATA_FILE, "r", encoding="utf-8") as f:
+            st.session_state.words = json.load(f)
+    # 3. どちらにも無ければ初期データを出す
     else:
         st.session_state.words = {
             "vulnerable": "脆弱な、傷つきやすい",
@@ -21,7 +31,10 @@ if "wrong_words" not in st.session_state:
     st.session_state.wrong_words = set()
 
 if "current_word" not in st.session_state:
-    st.session_state.current_word = random.choice(list(st.session_state.words.keys()))
+    if st.session_state.words:
+        st.session_state.current_word = random.choice(list(st.session_state.words.keys()))
+    else:
+        st.session_state.current_word = None
 if "show_answer" not in st.session_state:
     st.session_state.show_answer = False
 
@@ -110,10 +123,8 @@ with tab3:
     if not st.session_state.words:
         st.caption("登録されている単語はありません。")
     else:
-        # 【ここが新しい仕組み！】検索キーワードの入力欄
         search_query = st.text_input("🔍 単語を検索（英単語・意味のどちらでもOK）", value="")
 
-        # 検索文字がある場合は絞り込み、ない場合は全件表示する
         filtered_words = {}
         for w, m in st.session_state.words.items():
             if search_query.lower() in w.lower() or search_query in m:
