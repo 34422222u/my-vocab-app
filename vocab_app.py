@@ -29,9 +29,18 @@ with tab1:
     if not st.session_state.words:
         st.warning("単語がありません。")
     else:
-        q_word = random.choice(list(st.session_state.words.keys()))
-        st.info(f"問題: **{q_word}**")
-        if st.button("答えを表示"): st.success(f"【答え】 {st.session_state.words[q_word]}")
+        # 日本語➔英語をデフォルトにする
+        mode = st.radio("出題モード", ["日本語 ➔ 英語", "英語 ➔ 日本語"], horizontal=True)
+        
+        words_list = list(st.session_state.words.items())
+        q_pair = random.choice(words_list)
+        
+        if mode == "日本語 ➔ 英語":
+            st.info(f"問題: **{q_pair[1]}**")
+            if st.button("答えを表示"): st.success(f"【答え】 {q_pair[0]}")
+        else:
+            st.info(f"問題: **{q_pair[0]}**")
+            if st.button("答えを表示"): st.success(f"【答え】 {q_pair[1]}")
 
 with tab2:
     st.header("新しい単語を追加")
@@ -44,7 +53,7 @@ with tab2:
         st.rerun()
 
 with tab3:
-    st.subheader("📚 単語一覧・編集・削除")
+    st.subheader("📚 登録されている単語一覧")
     for w, m in list(st.session_state.words.items()):
         col1, col2, col3 = st.columns([3, 1, 1])
         with col1:
