@@ -20,6 +20,11 @@ if "words" not in st.session_state:
     st.session_state.words = load_data()
 if "editing_word" not in st.session_state:
     st.session_state.editing_word = None
+# クイズの状態管理を追加
+if "show_answer" not in st.session_state:
+    st.session_state.show_answer = False
+if "current_q" not in st.session_state:
+    st.session_state.current_q = None
 
 st.title("📝 自分専用の英単語帳")
 tab1, tab2, tab3 = st.tabs(["🎯 クイズ", "➕ 単語を追加", "📚 単語一覧・編集"])
@@ -29,18 +34,37 @@ with tab1:
     if not st.session_state.words:
         st.warning("単語がありません。")
     else:
-        # 日本語➔英語をデフォルトにする
         mode = st.radio("出題モード", ["日本語 ➔ 英語", "英語 ➔ 日本語"], horizontal=True)
         
-        words_list = list(st.session_state.words.items())
-        q_pair = random.choice(words_list)
+        # 新しい問題がセットされていなければセットする
+        if st.session_state.current_q is None:
+            st.session_state.current_q = random.choice(list(st.session_state.words.items()))
+
+        q_pair = st.session_state.current_q
         
         if mode == "日本語 ➔ 英語":
             st.info(f"問題: **{q_pair[1]}**")
-            if st.button("答えを表示"): st.success(f"【答え】 {q_pair[0]}")
         else:
             st.info(f"問題: **{q_pair[0]}**")
-            if st.button("答えを表示"): st.success(f"【答え】 {q_pair[1]}")
+
+        if not st.session_state.show_answer:
+            if st.button("答えを表示"):
+                st.session_state.show_answer = True
+                st.rerun()
+        else:
+            ans = q_pair[0] if mode == "日本語 ➔ 英語" else q_pair[1]
+            st.success(f"【答え】 {ans}")
+            
+            # 次へ進むボタン
+            col1, col2 = st.columns(2)
+            if col1.button("⭕️ 正解"):
+                st.session_state.show_answer = False
+                st.session_state.current_q = None # 次回ランダムに更新
+                st.rerun()
+            if col2.button("❌ 間違えた"):
+                st.session_state.show_answer = False
+                st.session_state.current_q = None # 次回ランダムに更新
+                st.rerun()
 
 with tab2:
     st.header("新しい単語を追加")
