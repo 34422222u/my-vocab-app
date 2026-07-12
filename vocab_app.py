@@ -20,7 +20,6 @@ if "words" not in st.session_state:
     st.session_state.words = load_data()
 if "editing_word" not in st.session_state:
     st.session_state.editing_word = None
-# クイズの状態管理を追加
 if "show_answer" not in st.session_state:
     st.session_state.show_answer = False
 if "current_q" not in st.session_state:
@@ -36,7 +35,6 @@ with tab1:
     else:
         mode = st.radio("出題モード", ["日本語 ➔ 英語", "英語 ➔ 日本語"], horizontal=True)
         
-        # 新しい問題がセットされていなければセットする
         if st.session_state.current_q is None:
             st.session_state.current_q = random.choice(list(st.session_state.words.items()))
 
@@ -55,15 +53,14 @@ with tab1:
             ans = q_pair[0] if mode == "日本語 ➔ 英語" else q_pair[1]
             st.success(f"【答え】 {ans}")
             
-            # 次へ進むボタン
             col1, col2 = st.columns(2)
             if col1.button("⭕️ 正解"):
                 st.session_state.show_answer = False
-                st.session_state.current_q = None # 次回ランダムに更新
+                st.session_state.current_q = None
                 st.rerun()
             if col2.button("❌ 間違えた"):
                 st.session_state.show_answer = False
-                st.session_state.current_q = None # 次回ランダムに更新
+                st.session_state.current_q = None
                 st.rerun()
 
 with tab2:
@@ -78,25 +75,38 @@ with tab2:
 
 with tab3:
     st.subheader("📚 登録されている単語一覧")
-    for w, m in list(st.session_state.words.items()):
-        col1, col2, col3 = st.columns([3, 1, 1])
-        with col1:
-            st.write(f"**{w}** : {m}")
-        with col2:
-            if st.button("✏️", key=f"edit_{w}"):
-                st.session_state.editing_word = w
-        with col3:
-            if st.button("🗑️", key=f"del_{w}"):
-                del st.session_state.words[w]
-                save_data()
-                st.rerun()
-        
-        if st.session_state.editing_word == w:
-            new_w = st.text_input("単語を編集", value=w, key=f"new_w_{w}")
-            new_m = st.text_input("意味を編集", value=m, key=f"new_m_{w}")
-            if st.button("💾 保存", key=f"save_{w}"):
-                del st.session_state.words[w]
-                st.session_state.words[new_w] = new_m
-                save_data()
-                st.session_state.editing_word = None
-                st.rerun()
+    
+    # 検索ボックスの追加
+    search_query = st.text_input("🔍 単語や意味を検索", "").lower()
+    
+    # 検索ワードに合わせてフィルタリング
+    filtered_words = {
+        w: m for w, m in st.session_state.words.items()
+        if search_query in w.lower() or search_query in m.lower()
+    }
+    
+    if not filtered_words:
+        st.info("該当する単語が見つかりません。")
+    else:
+        for w, m in list(filtered_words.items()):
+            col1, col2, col3 = st.columns([3, 1, 1])
+            with col1:
+                st.write(f"**{w}** : {m}")
+            with col2:
+                if st.button("✏️", key=f"edit_{w}"):
+                    st.session_state.editing_word = w
+            with col3:
+                if st.button("🗑️", key=f"del_{w}"):
+                    del st.session_state.words[w]
+                    save_data()
+                    st.rerun()
+            
+            if st.session_state.editing_word == w:
+                new_w = st.text_input("単語を編集", value=w, key=f"new_w_{w}")
+                new_m = st.text_input("意味を編集", value=m, key=f"new_m_{w}")
+                if st.button("💾 保存", key=f"save_{w}"):
+                    del st.session_state.words[w]
+                    st.session_state.words[new_w] = new_m
+                    save_data()
+                    st.session_state.editing_word = None
+                    st.rerun()
